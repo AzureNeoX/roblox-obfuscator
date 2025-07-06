@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Roblox Lua Obfuscator</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 2rem;
+        background-color: #0d1117;
+        color: #c9d1d9;
+        font-family: sans-serif;
+      }
+      h1 {
+        margin-bottom: 1rem;
+      }
+      textarea {
+        width: 100%;
+        min-height: 200px;
+        background: #161b22;
+        border: none;
+        color: #c9d1d9;
+        padding: 1rem;
+        border-radius: 8px;
+        font-family: monospace;
+        resize: vertical;
+      }
+      button {
+        margin-top: 1rem;
+        background: #238636;
+        color: white;
+        border: none;
+        padding: 0.75rem 1.5rem;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: bold;
+      }
+      button:hover {
+        opacity: 0.9;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Roblox Lua Obfuscator</h1>
+    <p>Paste your Lua script below, then click Obfuscate. You'll get a ready-to-use <code>loadstring()</code>.</p>
+    <textarea id="input" placeholder="-- Paste your Lua code here"></textarea>
+    <button id="run">Obfuscate</button>
+    <h2>Loadstring Output</h2>
+    <textarea id="output" readonly placeholder="loadstring(...)"></textarea>
+
+    <script>
+      function randomVar(length = 6) {
+        const chars = "abcdefghijklmnopqrstuvwxyz";
+        let result = "";
+        for (let i = 0; i < length; i++) {
+          result += chars[Math.floor(Math.random() * chars.length)];
+        }
+        return result;
+      }
+
+      function obfuscateLua(code) {
+        const locals = [...code.matchAll(/\\blocal\\s+([A-Za-z_][A-Za-z0-9_]*)/g)].map(m => m[1]);
+        const map = {};
+        locals.forEach(v => map[v] = randomVar());
+        let result = code;
+        for (const [oldName, newName] of Object.entries(map)) {
+          const regex = new RegExp(`\\b${oldName}\\b`, 'g');
+          result = result.replace(regex, newName);
+        }
+        return result;
+      }
+
+      function toLoadstring(code, domain = window.location.host) {
+        const b64 = btoa(unescape(encodeURIComponent(code)));
+        return `loadstring(game:HttpGet('https://${domain}/api/script?c=${b64}'))()`;
+      }
+
+      document.getElementById("run").addEventListener("click", () => {
+        const input = document.getElementById("input").value.trim();
+        if (!input) return alert("Please paste Lua code first.");
+        const obfuscated = obfuscateLua(input);
+        document.getElementById("output").value = toLoadstring(obfuscated);
+      });
+    </script>
+  </body>
+</html>
